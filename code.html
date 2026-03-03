@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SplitEase – Smart Bill Splitter</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#e85d2f"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#f4f1eb;--surface:#fff;--surface2:#f0ede6;--border:#e2ddd4;
+  --text:#1a1714;--sub:#6b6560;--acc:#e85d2f;--acc-lt:#fde8e0;--acc-dk:#c44a20;
+  --green:#2da868;--green-lt:#d4f0e4;--blue:#2d6be4;--blue-lt:#dce8fc;
+  --purple:#7c3aed;--purple-lt:#ede9fe;
+  --r:16px;--r-sm:10px;--sh:0 2px 12px rgba(0,0,0,.07);--t:.2s ease;
+}
+[data-theme=dark]{
+  --bg:#0f0e0c;--surface:#1c1a17;--surface2:#252320;--border:#302e2a;
+  --text:#f0ece4;--sub:#9a9590;--acc:#ff6b3d;--acc-lt:#3d1a0f;--acc-dk:#ff8c63;
+  --green:#3dc97e;--green-lt:#0d2e1e;--blue:#5b8ff9;--blue-lt:#0d1e3d;
+  --purple:#a78bfa;--purple-lt:#1e1040;--sh:0 2px 12px rgba(0,0,0,.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background var(--t),color var(--t);padding-bottom:80px}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;position:sticky;top:0;z-index:200;background:var(--bg);border-bottom:1px solid var(--border);backdrop-filter:blur(12px)}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.35rem;letter-spacing:-.5px}
+.logo span{color:var(--acc)}
+.icon-btn{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;color:var(--text);transition:all var(--t)}
+.icon-btn:hover{background:var(--surface2);transform:scale(1.06)}
+.inline-nav-wrap{position:sticky;top:57px;z-index:150;background:var(--bg);padding:10px 16px;border-bottom:1px solid var(--border)}
+.inline-nav{display:flex;justify-content:center;gap:5px;max-width:580px;margin:0 auto;background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px;box-shadow:var(--sh)}
+.inline-tab{flex:1;padding:9px 8px;border:none;background:transparent;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;color:var(--sub);cursor:pointer;white-space:nowrap;transition:all var(--t);text-align:center}
+.inline-tab:hover:not(.active){color:var(--text)}
+.inline-tab.active{background:var(--acc);color:#fff;box-shadow:0 2px 10px rgba(232,93,47,.3)}
+.page{display:none;animation:fadeIn .25s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+main{max-width:580px;margin:0 auto;padding:18px 14px 0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:12px;box-shadow:var(--sh)}
+.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.76rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--sub);margin-bottom:12px}
+.card-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.card-hdr .card-title{margin-bottom:0}
+.field{margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+label{display:block;font-size:.8rem;font-weight:500;color:var(--sub);margin-bottom:4px}
+.iw{position:relative;display:flex;align-items:center}
+.pfx,.sfx{position:absolute;font-size:.88rem;font-weight:500;color:var(--sub);pointer-events:none}
+.pfx{left:11px}.sfx{right:11px}
+input[type=number],input[type=text],select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.93rem;font-weight:500;transition:border-color var(--t),box-shadow var(--t);outline:none;-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+.has-pfx input,.has-pfx select{padding-left:28px}
+.has-sfx input{padding-right:36px}
+input:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-lt)}
+.err{color:var(--acc);font-size:.75rem;margin-top:3px;display:none}
+.has-error input{border-color:var(--acc)}
+.has-error .err{display:block}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stepper{display:flex;border:1.5px solid var(--border);border-radius:var(--r-sm);overflow:hidden;background:var(--surface2)}
+.step-btn{width:42px;height:43px;border:none;background:transparent;color:var(--text);font-size:1.3rem;cursor:pointer;transition:background var(--t);flex-shrink:0}
+.step-btn:hover{background:var(--border)}
+.stepper input{border:none;border-left:1.5px solid var(--border);border-right:1.5px solid var(--border);border-radius:0;text-align:center;background:transparent;flex:1}
+.stepper input:focus{box-shadow:none;border-color:var(--border)}
+.tip-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tip-pill{padding:5px 12px;border-radius:100px;border:1.5px solid var(--border);background:var(--surface2);cursor:pointer;font-size:.8rem;font-weight:500;transition:all var(--t);color:var(--text)}
+.tip-pill:hover{border-color:var(--acc);color:var(--acc)}
+.tip-pill.active{background:var(--acc);border-color:var(--acc);color:#fff}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.toggle-row:last-child{margin-bottom:0}
+.tgl-label{font-size:.86rem;font-weight:500}
+.toggle{width:42px;height:23px;border-radius:100px;background:var(--border);position:relative;cursor:pointer;transition:background var(--t);flex-shrink:0}
+.toggle.on{background:var(--acc)}
+.toggle::after{content:'';position:absolute;width:17px;height:17px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform var(--t);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.toggle.on::after{transform:translateX(19px)}
+.cat-grid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+.cat-chip{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:100px;border:1.5px solid var(--border);background:var(--surface2);cursor:pointer;font-size:.8rem;font-weight:500;transition:all var(--t);color:var(--text)}
+.cat-chip:hover{border-color:var(--acc);color:var(--acc)}
+.cat-chip.selected{background:rgba(255,107,61,.15);border-color:var(--acc);color:var(--acc)}
+.cat-item{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:7px;animation:slideUp .2s ease}
+.cat-icon{font-size:1.05rem;flex-shrink:0;width:26px;text-align:center}
+.cat-name{flex:1;font-size:.88rem;font-weight:500}
+.rm-btn{width:27px;height:27px;border-radius:50%;border:none;background:transparent;color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all var(--t)}
+.rm-btn:hover{background:var(--acc-lt);color:var(--acc)}
+.person-row{display:flex;align-items:center;gap:7px;margin-bottom:7px;animation:slideUp .2s ease}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--acc-lt);color:var(--acc);font-family:'Syne',sans-serif;font-weight:700;font-size:.8rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.avatar.b{background:var(--blue-lt);color:var(--blue)}
+.avatar.g{background:var(--green-lt);color:var(--green)}
+.avatar.p{background:var(--purple-lt);color:var(--purple)}
+.result-hero{background:linear-gradient(135deg,var(--acc) 0%,var(--acc-dk) 100%);border-radius:var(--r);padding:22px;color:#fff;position:relative;overflow:hidden;margin-bottom:12px;box-shadow:0 8px 24px rgba(232,93,47,.25)}
+.result-hero::before{content:'';position:absolute;width:170px;height:170px;border-radius:50%;background:rgba(255,255,255,.07);top:-50px;right:-30px}
+.rh-label{font-size:.78rem;opacity:.72;margin-bottom:2px}
+.rh-amount{font-family:'Syne',sans-serif;font-weight:800;font-size:2.7rem;letter-spacing:-1px;line-height:1}
+.rh-sub{font-size:.8rem;opacity:.62;margin-top:3px}
+.rh-bd{display:flex;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.18);flex-wrap:wrap}
+.rh-bd-item{flex:1;min-width:55px}
+.rh-bd-label{font-size:.68rem;opacity:.6;margin-bottom:1px}
+.rh-bd-value{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem}
+.ppi{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:7px}
+.ppi-left{display:flex;align-items:center;gap:8px}
+.ppi-name{font-weight:500;font-size:.88rem}
+.ppi-amt{font-family:'Syne',sans-serif;font-weight:700;font-size:.98rem;color:var(--green)}
+.hist-item{padding:13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:8px;cursor:pointer;transition:all var(--t)}
+.hist-item:hover{border-color:var(--acc)}
+.hist-top{display:flex;justify-content:space-between;margin-bottom:4px;align-items:flex-start}
+.hist-total{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem}
+.hist-date{font-size:.72rem;color:var(--sub)}
+.hist-cats{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
+.hist-badge{padding:2px 8px;border-radius:100px;background:var(--acc-lt);color:var(--acc);font-size:.7rem;font-weight:500}
+.hist-sub{font-size:.78rem;color:var(--sub)}
+.hist-people{display:flex;gap:0;margin-top:5px;align-items:center}
+.h-av{width:20px;height:20px;border-radius:50%;background:var(--acc-lt);color:var(--acc);font-size:.62rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface2);margin-left:-3px}
+.h-av:first-child{margin-left:0}
+.hist-more{font-size:.72rem;color:var(--sub);margin-left:7px}
+.hist-acts{display:flex;gap:5px;justify-content:flex-end;margin-top:7px}
+.h-act-btn{padding:3px 10px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--sub);font-size:.7rem;cursor:pointer;transition:all var(--t)}
+.h-act-btn:hover{background:var(--acc-lt);color:var(--acc);border-color:var(--acc)}
+.hist-empty{text-align:center;padding:40px 20px;color:var(--sub)}
+.hist-empty-icon{font-size:2.2rem;margin-bottom:8px}
+.btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:12px;border-radius:var(--r-sm);border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:.92rem;cursor:pointer;transition:all var(--t)}
+.btn-primary{background:var(--acc);color:#fff;box-shadow:0 4px 14px rgba(232,93,47,.22)}
+.btn-primary:hover{background:var(--acc-dk);transform:translateY(-1px)}
+.btn-outline{background:transparent;color:var(--text);border:1.5px solid var(--border)}
+.btn-outline:hover{background:var(--surface2)}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{opacity:.9;transform:translateY(-1px)}
+.btn-sm{padding:7px 13px;font-size:.78rem;width:auto}
+.btn-row{display:flex;gap:8px}
+.divider{height:1px;background:var(--border);margin:12px 0}
+.share-option-btn{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:var(--surface2);cursor:pointer;text-align:left;margin-bottom:10px;transition:all var(--t);color:var(--text)}
+.share-option-btn:hover{border-color:var(--acc);background:var(--acc-lt)}
+.share-option-btn:last-child{margin-bottom:0}
+.sopt-icon{font-size:1.6rem;flex-shrink:0;width:36px;text-align:center}
+.sopt-body{flex:1}
+.sopt-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.92rem;margin-bottom:2px}
+.sopt-sub{font-size:.75rem;color:var(--sub)}
+.sopt-arrow{font-size:1.3rem;color:var(--sub);flex-shrink:0}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--r) var(--r) 0 0;padding:22px 18px;width:100%;max-width:580px;animation:slideUp .3s ease;max-height:88vh;overflow-y:auto}
+.modal-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.95rem;color:var(--text)}
+.icon-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.icon-pill{width:38px;height:38px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all var(--t)}
+.icon-pill:hover{border-color:var(--acc)}
+.icon-pill.sel{background:var(--acc-lt);border-color:var(--acc)}
+.upi-card{background:linear-gradient(135deg,#0a1628 0%,#122040 100%);color:#fff;border:none}
+.upi-card .card-title{color:rgba(255,255,255,.5)}
+.upi-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
+.upi-name{font-family:'Syne',sans-serif;font-weight:700;font-size:1.15rem;margin-bottom:4px}
+.upi-id{font-size:.82rem;opacity:.65;font-family:monospace;letter-spacing:.5px}
+.upi-logo{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:6px 12px;font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem;letter-spacing:1px;color:#fff}
+.qr-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px;background:rgba(255,255,255,.06);border-radius:12px}
+#qrCode{background:#fff;padding:12px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+#qrCode canvas,#qrCode img{display:block}
+.qr-hint{font-size:.78rem;opacity:.55}
+.upi-apps{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.upi-apps span{font-size:.75rem;opacity:.6}
+.upi-card .btn-outline{border-color:rgba(255,255,255,.25);color:#fff;background:rgba(255,255,255,.08)}
+.upi-card .btn-outline:hover{background:rgba(255,255,255,.15)}
+.scan-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border:3px solid var(--acc);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);pointer-events:none}
+.scan-overlay::before,.scan-overlay::after{content:'';position:absolute;width:24px;height:24px;border-color:var(--acc);border-style:solid}
+.scan-overlay::before{top:-3px;left:-3px;border-width:4px 0 0 4px;border-radius:4px 0 0 4px}
+.scan-overlay::after{bottom:-3px;right:-3px;border-width:0 4px 4px 0;border-radius:0 0 4px 0}
+.scan-result-box{background:var(--green-lt);border:1.5px solid var(--green);border-radius:var(--r-sm);padding:14px 16px}
+.scan-result-label{font-size:.78rem;color:var(--green);font-weight:600;margin-bottom:4px}
+.scan-result-value{font-family:monospace;font-size:1rem;font-weight:700;color:var(--text);word-break:break-all}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:100px;font-size:.8rem;font-weight:500;z-index:999;transition:transform .3s ease;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.empty-state{text-align:center;padding:24px 16px;color:var(--sub);font-size:.84rem}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media(max-width:400px){.rh-amount{font-size:2.1rem}.g2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Split<span>Ease</span></div>
+  <button class="icon-btn" id="themeBtn" title="Toggle theme">🌙</button>
+</header>
+
+<div class="inline-nav-wrap">
+  <div class="inline-nav">
+    <button class="inline-tab active" data-page="split">🧾 Split Bill</button>
+    <button class="inline-tab" data-page="bank">🏦 Bank Transfer</button>
+    <button class="inline-tab" data-page="history">🕐 History</button>
+  </div>
+</div>
+
+<!-- SPLIT PAGE -->
+<div class="page active" id="page-split"><main>
+  <div class="card">
+    <div class="card-title">Bill Amount</div>
+    <div class="field" id="billField">
+      <div class="iw has-pfx"><span class="pfx">₹</span>
+        <input type="number" id="billAmount" placeholder="0.00" min="0" step="0.01"/>
+      </div>
+      <div class="err">Please enter a valid bill amount.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Categories</div>
+      <button class="btn btn-outline btn-sm" id="openCatModal">+ Add</button>
+    </div>
+    <div class="cat-grid" id="catPresets"></div>
+    <div id="catItems"><div class="empty-state">No categories yet. Tap a preset or + Add.</div></div>
+    <div id="catSumMsg" style="font-size:.78rem;margin-top:4px"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">People</div>
+      <button class="btn btn-outline btn-sm" id="addPersonBtn">+ Add Person</button>
+    </div>
+    <div id="personRows"></div>
+    <div class="field" id="peopleField"><div class="err">Add at least 1 person.</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Extras & Options</div>
+    <label style="margin-bottom:6px">Tip</label>
+    <div class="tip-pills">
+      <button class="tip-pill active" data-tip="0">No Tip</button>
+      <button class="tip-pill" data-tip="10">10%</button>
+      <button class="tip-pill" data-tip="15">15%</button>
+      <button class="tip-pill" data-tip="18">18%</button>
+      <button class="tip-pill" data-tip="20">20%</button>
+      <button class="tip-pill" data-tip="custom">Custom</button>
+    </div>
+    <div class="iw has-sfx" id="customTipWrap" style="display:none;margin-bottom:10px">
+      <input type="number" id="customTip" placeholder="Enter %" min="0" max="100"/>
+      <span class="sfx">%</span>
+    </div>
+    <div class="divider"></div>
+    <div class="toggle-row">
+      <span class="tgl-label">Include GST / Tax</span>
+      <div class="toggle" id="gstToggle"></div>
+    </div>
+    <div id="gstSection" style="display:none" class="field">
+      <div class="iw has-sfx">
+        <input type="number" id="gstRate" value="18" min="0" max="100"/>
+        <span class="sfx">%</span>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="toggle-row">
+      <span class="tgl-label">Custom amount per person</span>
+      <div class="toggle" id="customSplitToggle"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="field" style="margin-bottom:0">
+      <label>Rounding</label>
+      <select id="roundingOpt">
+        <option value="none">Exact (no rounding)</option>
+        <option value="round">Round to nearest ₹1</option>
+        <option value="ceil">Round up</option>
+        <option value="floor">Round down</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="calcBtn">⚡ Calculate Split</button>
+
+  <div id="resultSection" style="display:none;margin-top:14px">
+    <div class="result-hero">
+      <div class="rh-label">Each person pays</div>
+      <div class="rh-amount" id="resPerPerson">₹0</div>
+      <div class="rh-sub" id="resSub">—</div>
+      <div class="rh-bd">
+        <div class="rh-bd-item"><div class="rh-bd-label">Bill</div><div class="rh-bd-value" id="resBill">₹0</div></div>
+        <div class="rh-bd-item"><div class="rh-bd-label">Tip</div><div class="rh-bd-value" id="resTip">₹0</div></div>
+        <div class="rh-bd-item"><div class="rh-bd-label">GST</div><div class="rh-bd-value" id="resGST">₹0</div></div>
+        <div class="rh-bd-item"><div class="rh-bd-label">Total</div><div class="rh-bd-value" id="resTotal">₹0</div></div>
+      </div>
+    </div>
+    <div class="card" id="perPersonCard" style="display:none">
+      <div class="card-title">Per Person Breakdown</div>
+      <div id="perPersonList"></div>
+    </div>
+    <div class="btn-row" style="margin-bottom:12px">
+      <button class="btn btn-green" id="shareWA">📲 Share</button>
+      <button class="btn btn-outline" id="copyBtn">📋 Copy</button>
+    </div>
+    <canvas id="shareCanvas" style="display:none"></canvas>
+  </div>
+</main></div>
+
+<!-- BANK PAGE -->
+<div class="page" id="page-bank"><main>
+  <div class="card">
+    <div class="card-title">Your UPI Details</div>
+    <p style="font-size:.81rem;color:var(--sub);margin-bottom:14px">Enter your UPI ID to generate a QR code friends can scan to pay you.</p>
+    <div class="field"><label>Your Name</label>
+      <input type="text" id="bankName" placeholder="e.g. Ravi Kumar"/>
+    </div>
+    <div class="field"><label>UPI ID</label>
+      <input type="text" id="bankUPI" placeholder="e.g. ravi@upi / 9876543210@paytm"/>
+      <div style="font-size:.74rem;color:var(--sub);margin-top:4px">Common formats: <code>name@okicici</code> · <code>number@paytm</code> · <code>name@ybl</code> · <code>number@gpay</code></div>
+    </div>
+    <button class="btn btn-primary" id="saveBankBtn">⚡ Generate QR Code</button>
+  </div>
+
+  <div id="bankPreview" style="display:none">
+    <div class="card upi-card">
+      <div class="upi-header">
+        <div>
+          <div style="font-size:.72rem;color:var(--sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Pay via UPI</div>
+          <div class="upi-name" id="bc-name">—</div>
+          <div class="upi-id" id="bc-upi">—</div>
+        </div>
+        <div class="upi-logo">UPI</div>
+      </div>
+      <div class="qr-wrap">
+        <div id="qrCode"></div>
+        <div class="qr-hint">Scan with any UPI app</div>
+        <div id="qrUpiString" style="font-family:monospace;font-size:.72rem;opacity:.5;margin-top:2px;text-align:center;word-break:break-all"></div>
+        <div class="upi-apps"><span>📱 GPay</span><span>💜 PhonePe</span><span>🔵 Paytm</span><span>🟠 BHIM</span></div>
+      </div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-outline" id="copyUpiBtn">📋 Copy UPI ID</button>
+        <button class="btn btn-green" id="shareBankBtn">📲 Share QR Image</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">Scan Someone's QR</div>
+      <span style="font-size:.78rem;color:var(--sub)">Read UPI from camera</span>
+    </div>
+    <div id="scannerArea">
+      <button class="btn btn-outline" id="startScanBtn">📷 Open Camera Scanner</button>
+    </div>
+    <div id="scannerVideo" style="display:none;margin-top:12px">
+      <div style="position:relative">
+        <video id="camVideo" style="width:100%;border-radius:var(--r-sm);background:#000;display:block" autoplay playsinline muted></video>
+        <div class="scan-overlay"></div>
+      </div>
+      <button class="btn btn-outline" id="stopScanBtn" style="margin-top:8px">✕ Stop Scanner</button>
+    </div>
+    <div id="scanResult" style="display:none;margin-top:12px">
+      <div class="scan-result-box">
+        <div class="scan-result-label">✅ Scanned UPI ID</div>
+        <div class="scan-result-value" id="scannedUPI">—</div>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn btn-outline btn-sm" id="copyScannedBtn">📋 Copy</button>
+          <button class="btn btn-green btn-sm" id="payScannedBtn">💸 Pay Now</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main></div>
+
+<!-- HISTORY PAGE -->
+<div class="page" id="page-history"><main>
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">Calculation History</div>
+      <button class="btn btn-outline btn-sm" id="clearHistBtn">Clear All</button>
+    </div>
+    <div id="histList"></div>
+  </div>
+</main></div>
+
+<!-- MODAL: ADD CATEGORY -->
+<div class="modal-bg" id="catModal">
+  <div class="modal">
+    <div class="modal-title">Add Category
+      <button class="modal-close" id="closeCatModal">×</button>
+    </div>
+    <div class="field"><label>Category Name</label>
+      <input type="text" id="newCatName" placeholder="e.g. Food, Drinks, Petrol"/>
+    </div>
+    <div class="field"><label>Amount (₹)</label>
+      <div class="iw has-pfx"><span class="pfx">₹</span>
+        <input type="number" id="newCatAmt" placeholder="0.00" min="0" step="0.01"/>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:0"><label>Choose Icon</label>
+      <div class="icon-picker" id="iconPicker"></div>
+    </div>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-outline" id="cancelCatModal">Cancel</button>
+      <button class="btn btn-primary" id="saveCatBtn">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SHARE -->
+<div class="modal-bg" id="shareModal">
+  <div class="modal" style="padding-bottom:28px">
+    <div class="modal-title">Share Bill
+      <button class="modal-close" id="closeShareModal">×</button>
+    </div>
+    <button class="share-option-btn" id="shareQRBtn">
+      <div class="sopt-icon">📸</div>
+      <div class="sopt-body"><div class="sopt-title">Share QR Image</div><div class="sopt-sub">Sends a payment card with your UPI QR code</div></div>
+      <div class="sopt-arrow">›</div>
+    </button>
+    <button class="share-option-btn" id="shareTextBtn">
+      <div class="sopt-icon">💬</div>
+      <div class="sopt-body"><div class="sopt-title">Share as Text</div><div class="sopt-sub">Sends a clean bill summary on WhatsApp</div></div>
+      <div class="sopt-arrow">›</div>
+    </button>
+    <button class="share-option-btn" id="shareCopyBtn">
+      <div class="sopt-icon">📋</div>
+      <div class="sopt-body"><div class="sopt-title">Copy to Clipboard</div><div class="sopt-sub">Copy the bill summary text</div></div>
+      <div class="sopt-arrow">›</div>
+    </button>
+    <p id="shareUPINote" style="display:none;font-size:.78rem;color:var(--acc);margin-top:14px;text-align:center;cursor:pointer"
+       onclick="closeShareAndGoBank()">⚠️ No UPI ID saved — tap here to add one first</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+'use strict';
+/* ══════════════════════════════════════════
+   SplitEase — Optimised App Logic
+══════════════════════════════════════════ */
+
+// ── Helpers ──
+const $ = id => document.getElementById(id);
+const fmt = n => '₹' + parseFloat(n || 0).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+const showToast = (() => {
+  let timer;
+  return msg => {
+    clearTimeout(timer);
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    timer = setTimeout(() => t.classList.remove('show'), 2400);
+  };
+})();
+
+const applyRnd = (v, m) =>
+  m === 'round' ? Math.round(v) :
+  m === 'ceil'  ? Math.ceil(v)  :
+  m === 'floor' ? Math.floor(v) :
+  parseFloat(v.toFixed(2));
+
+const AV_CLS = ['', 'b', 'g', 'p'];
+const initials = name => (name || '?')[0].toUpperCase();
+
+// ── localStorage helpers (centralised, avoids repeated parse/stringify) ──
+const LS = {
+  get: (k, fallback = null) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch { return fallback; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del: k => { try { localStorage.removeItem(k); } catch {} }
+};
+
+// ── State ──
+const state = {
+  tipPct: 0,
+  gstOn: false,
+  customSplit: false,
+  persons: [{name:'You',amt:''}, {name:'Friend',amt:''}],
+  cats: [],
+  bank: LS.get('se_bank'),
+  hist: LS.get('se_hist', [])
+};
+
+// ── Theme ──
+let dark = LS.get('se_theme') === 'dark';
+const applyTheme = () => {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  $('themeBtn').textContent = dark ? '☀️' : '🌙';
+  LS.set('se_theme', dark ? 'dark' : 'light');
+};
+$('themeBtn').onclick = () => { dark = !dark; applyTheme(); };
+applyTheme();
+
+// ── Navigation ──
+function switchPage(page) {
+  document.querySelectorAll('.inline-tab').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + page));
+  if (page === 'history') renderHist();
+  if (page === 'split') window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('.inline-tab').forEach(btn => btn.addEventListener('click', () => switchPage(btn.dataset.page)));
+
+// ── Tip ──
+document.querySelectorAll('.tip-pill').forEach(p => {
+  p.onclick = () => {
+    document.querySelectorAll('.tip-pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    const v = p.dataset.tip;
+    $('customTipWrap').style.display = v === 'custom' ? 'flex' : 'none';
+    state.tipPct = v === 'custom' ? 'custom' : parseFloat(v);
+  };
+});
+
+// ── Toggle helper ──
+function setupToggle(id, stateKey, onEl, offEl) {
+  const el = $(id);
+  el.onclick = () => {
+    state[stateKey] = !state[stateKey];
+    el.classList.toggle('on', state[stateKey]);
+    if (onEl)  $(onEl).style.display = state[stateKey] ? 'block' : 'none';
+    if (offEl) offEl();
+  };
+}
+setupToggle('gstToggle', 'gstOn', 'gstSection', null);
+setupToggle('customSplitToggle', 'customSplit', null, renderPersonRows);
+
+/* ══════════════════════
+   CATEGORIES
+══════════════════════ */
+const PRESETS = [
+  {i:'🍕',n:'Food'},{i:'🍺',n:'Drinks'},{i:'🚗',n:'Petrol'},
+  {i:'🏨',n:'Hotel'},{i:'🎬',n:'Movie'},{i:'🛒',n:'Grocery'},
+  {i:'🎉',n:'Party'},{i:'✈️',n:'Travel'},{i:'💊',n:'Medical'}
+];
+const ICONS = ['🍕','🍺','🚗','🏨','🎬','🛒','🎉','✈️','💊','📦','💰','⚡','🌊','🎸','🏋️','🧁','🎯','🔧','🍜','🏖️'];
+let selIcon = '📦';
+
+function renderIconPicker() {
+  const frag = document.createDocumentFragment();
+  ICONS.forEach(ic => {
+    const b = document.createElement('button');
+    b.className = 'icon-pill' + (ic === selIcon ? ' sel' : '');
+    b.textContent = ic;
+    b.onclick = () => { selIcon = ic; renderIconPicker(); };
+    frag.appendChild(b);
+  });
+  const el = $('iconPicker');
+  el.innerHTML = '';
+  el.appendChild(frag);
+}
+
+function syncCatTotal() {
+  const billVal = parseFloat($('billAmount').value) || 0;
+  const catTotal = state.cats.reduce((a, c) => a + (parseFloat(c.amt) || 0), 0);
+  const msg = $('catSumMsg');
+  if (!state.cats.length) { msg.textContent = ''; return; }
+  if (billVal > 0) {
+    const diff = parseFloat((billVal - catTotal).toFixed(2));
+    if (diff === 0) { msg.textContent = '✅ Categories match bill.'; msg.style.color = 'var(--green)'; }
+    else if (diff > 0) { msg.textContent = `⚠️ ₹${diff} not assigned.`; msg.style.color = 'var(--acc)'; }
+    else { msg.textContent = `⚠️ Over by ₹${Math.abs(diff)}.`; msg.style.color = 'var(--acc)'; }
+  } else {
+    msg.textContent = `Category total: ${fmt(catTotal)}`;
+    msg.style.color = 'var(--sub)';
+  }
+}
+
+function renderCatPresets() {
+  const assigned = new Set(state.cats.map(c => c.n));
+  const frag = document.createDocumentFragment();
+  PRESETS.forEach(p => {
+    if (assigned.has(p.n)) return;
+    const b = document.createElement('button');
+    b.className = 'cat-chip';
+    b.innerHTML = `<span>${p.i}</span>${p.n}`;
+    b.onclick = () => { state.cats.push({i:p.i, n:p.n, amt:''}); renderCats(); };
+    frag.appendChild(b);
+  });
+  const el = $('catPresets');
+  el.innerHTML = '';
+  el.appendChild(frag);
+}
+
+function renderCats() {
+  const el = $('catItems');
+  if (!state.cats.length) {
+    el.innerHTML = '<div class="empty-state">No categories yet.</div>';
+    renderCatPresets();
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  state.cats.forEach((c, idx) => {
+    const div = document.createElement('div');
+    div.className = 'cat-item';
+    div.innerHTML = `
+      <div class="cat-icon">${c.i}</div>
+      <div class="cat-name">${c.n}</div>
+      <div class="iw has-pfx" style="width:126px;flex-shrink:0">
+        <span class="pfx" style="font-size:.8rem">₹</span>
+        <input type="number" placeholder="0.00" value="${c.amt}"
+          style="padding:7px 8px 7px 24px;font-size:.85rem" min="0" step="0.01"/>
+      </div>
+      <button class="rm-btn" data-idx="${idx}">×</button>`;
+    div.querySelector('input').oninput = e => { state.cats[idx].amt = e.target.value; syncCatTotal(); };
+    div.querySelector('.rm-btn').onclick = () => { state.cats.splice(idx, 1); renderCats(); };
+    frag.appendChild(div);
+  });
+  el.innerHTML = '';
+  el.appendChild(frag);
+  renderCatPresets();
+  syncCatTotal();
+}
+
+$('billAmount').oninput = syncCatTotal;
+
+// Category modal
+$('openCatModal').onclick = () => {
+  $('newCatName').value = ''; $('newCatAmt').value = '';
+  selIcon = '📦'; renderIconPicker();
+  $('catModal').classList.add('open');
+};
+const closeCatModal = () => $('catModal').classList.remove('open');
+$('closeCatModal').onclick = closeCatModal;
+$('cancelCatModal').onclick = closeCatModal;
+$('saveCatBtn').onclick = () => {
+  const n = $('newCatName').value.trim();
+  if (!n) { showToast('Enter a category name.'); return; }
+  state.cats.push({i: selIcon, n, amt: $('newCatAmt').value});
+  renderCats();
+  closeCatModal();
+};
+
+/* ══════════════════════
+   PEOPLE
+══════════════════════ */
+function renderPersonRows() {
+  const el = $('personRows');
+  if (!state.persons.length) { el.innerHTML = '<div class="empty-state">No people added.</div>'; return; }
+  const frag = document.createDocumentFragment();
+  state.persons.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'person-row';
+    row.innerHTML = `
+      <div class="avatar ${AV_CLS[i % 4]}">${initials(p.name)}</div>
+      <input type="text" placeholder="Name" value="${p.name}" style="flex:1;padding:9px 11px"/>
+      ${state.customSplit ? `<div class="iw has-pfx" style="width:115px;flex-shrink:0">
+        <span class="pfx" style="font-size:.8rem">₹</span>
+        <input type="number" placeholder="Share" value="${p.amt}" style="padding:9px 7px 9px 24px;font-size:.85rem" min="0" step="0.01"/>
+      </div>` : ''}
+      ${state.persons.length > 1 ? `<button class="rm-btn">×</button>` : ''}`;
+    const nameInput = row.querySelector('input[type=text]');
+    nameInput.oninput = e => {
+      state.persons[i].name = e.target.value;
+      const av = row.querySelector('.avatar');
+      if (av) av.textContent = initials(e.target.value);
+    };
+    if (state.customSplit) {
+      row.querySelector('input[type=number]').oninput = e => { state.persons[i].amt = e.target.value; };
+    }
+    if (state.persons.length > 1) {
+      row.querySelector('.rm-btn').onclick = () => { state.persons.splice(i, 1); renderPersonRows(); };
+    }
+    frag.appendChild(row);
+  });
+  el.innerHTML = '';
+  el.appendChild(frag);
+}
+
+$('addPersonBtn').onclick = () => {
+  state.persons.push({name: `Person ${state.persons.length + 1}`, amt: ''});
+  renderPersonRows();
+};
+
+/* ══════════════════════
+   CALCULATE
+══════════════════════ */
+$('calcBtn').onclick = () => {
+  const catSum = state.cats.reduce((a, c) => a + (parseFloat(c.amt) || 0), 0);
+  let bill = catSum > 0 ? catSum : parseFloat($('billAmount').value) || 0;
+  if (catSum > 0 && !$('billAmount').value) $('billAmount').value = catSum.toFixed(2);
+
+  const billOk = bill > 0;
+  const pplOk  = state.persons.length >= 1;
+  $('billField').classList.toggle('has-error', !billOk);
+  $('peopleField').classList.toggle('has-error', !pplOk);
+  if (!billOk || !pplOk) return;
+
+  const tipPct = state.tipPct === 'custom' ? parseFloat($('customTip').value) || 0 : state.tipPct;
+  const gstPct = state.gstOn ? parseFloat($('gstRate').value) || 0 : 0;
+  const tip  = bill * tipPct / 100;
+  const gst  = bill * gstPct / 100;
+  const total = bill + tip + gst;
+  const rnd  = $('roundingOpt').value;
+  const n    = state.persons.length;
+
+  const result = {
+    bill, tip, gst, total, numPeople: n,
+    cats: state.cats.map(c => ({...c})),
+    splitMode: state.customSplit ? 'custom' : 'equal',
+    persons: [], perPerson: null,
+    timestamp: new Date().toISOString()
+  };
+
+  if (!state.customSplit) {
+    result.perPerson = applyRnd(total / n, rnd);
+    result.persons = state.persons.map((p, i) => ({name: p.name || `Person ${i+1}`, amount: result.perPerson}));
+  } else {
+    const ratio = total / (bill || 1);
+    result.persons = state.persons.map((p, i) => ({
+      name: p.name || `Person ${i+1}`,
+      amount: applyRnd((parseFloat(p.amt) || 0) * ratio, rnd)
+    }));
+  }
+
+  renderResult(result);
+  saveHist(result);
+};
+
+/* ══════════════════════
+   RESULT
+══════════════════════ */
+function renderResult(r) {
+  $('resultSection').style.display = 'block';
+  setTimeout(() => $('resultSection').scrollIntoView({behavior:'smooth', block:'nearest'}), 80);
+
+  $('resBill').textContent  = fmt(r.bill);
+  $('resTip').textContent   = fmt(r.tip);
+  $('resGST').textContent   = fmt(r.gst);
+  $('resTotal').textContent = fmt(r.total);
+
+  if (r.perPerson !== null) {
+    $('resPerPerson').textContent = fmt(r.perPerson);
+    $('resSub').textContent = `each · ${r.numPeople} ${r.numPeople === 1 ? 'person' : 'people'}`;
+  } else {
+    $('resPerPerson').textContent = 'Custom';
+    $('resSub').textContent = 'See breakdown below';
+  }
+
+  const list = $('perPersonList');
+  const ppCard = $('perPersonCard');
+  if (r.persons.length) {
+    ppCard.style.display = 'block';
+    const frag = document.createDocumentFragment();
+    r.persons.forEach((p, i) => {
+      const d = document.createElement('div');
+      d.className = 'ppi';
+      d.innerHTML = `<div class="ppi-left"><div class="avatar ${AV_CLS[i % 4]}">${initials(p.name)}</div><div class="ppi-name">${p.name}</div></div><div class="ppi-amt">${fmt(p.amount)}</div>`;
+      frag.appendChild(d);
+    });
+    list.innerHTML = '';
+    list.appendChild(frag);
+  } else {
+    ppCard.style.display = 'none';
+  }
+
+  $('shareWA').onclick = $('copyBtn').onclick = () => openShareModal(r);
+}
+
+/* ══════════════════════
+   SHARE MODAL
+══════════════════════ */
+let _currentResult = null;
+
+function openShareModal(r) {
+  _currentResult = r;
+  $('shareUPINote').style.display = state.bank?.upi ? 'none' : 'block';
+  $('shareModal').classList.add('open');
+}
+
+const closeShareModal = () => $('shareModal').classList.remove('open');
+$('closeShareModal').onclick = closeShareModal;
+$('shareModal').addEventListener('click', e => { if (e.target === $('shareModal')) closeShareModal(); });
+
+function closeShareAndGoBank() {
+  closeShareModal();
+  setTimeout(() => switchPage('bank'), 300);
+}
+
+$('shareQRBtn').onclick = async () => {
+  const r = _currentResult;
+  closeShareModal();
+  if (!state.bank?.upi) { showToast('Add your UPI ID first 👇'); setTimeout(() => switchPage('bank'), 800); return; }
+  showToast('Generating image…');
+  const qrDataUrl = await generateQRDataUrl(state.bank.upi, state.bank.name || '');
+  const dataUrl   = await drawShareImage(r, qrDataUrl);
+  await shareOrDownload(dataUrl, 'splitease-bill.png', 'SplitEase Bill', '');
+};
+
+$('shareTextBtn').onclick = () => {
+  closeShareModal();
+  window.open('https://wa.me/?text=' + encodeURIComponent(buildWAMessage(_currentResult)), '_blank');
+};
+
+$('shareCopyBtn').onclick = () => {
+  closeShareModal();
+  navigator.clipboard.writeText(buildWAMessage(_currentResult))
+    .then(() => showToast('Copied to clipboard!'))
+    .catch(() => showToast('Could not copy.'));
+};
+
+// Shared helper: try Web Share API, else download + open WhatsApp
+async function shareOrDownload(dataUrl, filename, title, waText) {
+  if (navigator.share && navigator.canShare) {
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], filename, {type:'image/png'});
+      if (navigator.canShare({files:[file]})) { await navigator.share({files:[file], title}); return; }
+    } catch(e) { if (e.name === 'AbortError') return; }
+  }
+  downloadImage(dataUrl, filename);
+  if (waText !== null) {
+    setTimeout(() => window.open('https://wa.me/?text=' + encodeURIComponent(waText || 'Here is the bill split — see the attached QR image 🙏'), '_blank'), 400);
+    showToast('Image saved! Attach it in WhatsApp 📎');
+  }
+}
+
+function buildWAMessage(r) {
+  const lines = ['🧾 *SplitEase Bill Summary*', ''];
+  if (r.cats?.length) {
+    lines.push('*Categories:*');
+    r.cats.forEach(c => lines.push(`  ${c.i} ${c.n}: ${fmt(parseFloat(c.amt) || 0)}`));
+    lines.push('');
+  }
+  lines.push(`Bill: ${fmt(r.bill)}`);
+  if (r.tip > 0) lines.push(`Tip: ${fmt(r.tip)}`);
+  if (r.gst > 0) lines.push(`GST: ${fmt(r.gst)}`);
+  lines.push(`*Total: ${fmt(r.total)}*`, '', '*Per Person:*');
+  r.persons.forEach(p => lines.push(`  • ${p.name}: ${fmt(p.amount)}`));
+  if (state.bank?.upi) {
+    lines.push('', `💳 Pay via UPI: *${state.bank.upi}*`);
+    if (state.bank.name) lines.push(`Name: ${state.bank.name}`);
+  }
+  lines.push('', '_Calculated with SplitEase_');
+  return lines.join('\n');
+}
+
+/* ── Canvas / QR helpers ── */
+function generateQRDataUrl(upiId, name) {
+  return new Promise(resolve => {
+    const tmp = document.createElement('div');
+    tmp.style.cssText = 'position:absolute;left:-9999px;top:-9999px';
+    document.body.appendChild(tmp);
+    try {
+      new QRCode(tmp, {text:`upi://pay?pa=${upiId}&pn=${name}&cu=INR`, width:200, height:200,
+        colorDark:'#000000', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.L});
+      setTimeout(() => {
+        const el = tmp.querySelector('img') || tmp.querySelector('canvas');
+        const url = el ? (el.src || el.toDataURL()) : null;
+        document.body.removeChild(tmp);
+        resolve(url);
+      }, 100);
+    } catch { document.body.removeChild(tmp); resolve(null); }
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r, fill) {
+  ctx.fillStyle = fill;
+  ctx.shadowColor = 'rgba(0,0,0,.08)';
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetY = 2;
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);    ctx.quadraticCurveTo(x+w, y,   x+w, y+r);
+  ctx.lineTo(x+w, y+h-r);  ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h);    ctx.quadraticCurveTo(x, y+h,   x, y+h-r);
+  ctx.lineTo(x, y+r);      ctx.quadraticCurveTo(x, y,     x+r, y);
+  ctx.closePath(); ctx.fill();
+  ctx.shadowColor = 'transparent';
+}
+
+async function drawShareImage(r, qrDataUrl) {
+  const W = 640;
+  const personRowH = 44;
+  const personsH   = Math.min(r.persons.length, 6) * personRowH;
+  const billCardH  = 180 + personsH;
+  const qrCardH    = 310;
+  const H          = 64 + 12 + billCardH + 14 + qrCardH + 28;
+
+  const canvas = $('shareCanvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const dk   = document.documentElement.getAttribute('data-theme') === 'dark';
+  const BG   = dk ? '#181614' : '#f0ede6';
+  const CARD = dk ? '#242220' : '#ffffff';
+  const ROWBG= dk ? '#2e2b28' : '#f4f1eb';
+  const LINE = dk ? '#302e2a' : '#e2ddd4';
+  const TEXT = dk ? '#f0ece4' : '#1a1714';
+  const SUB  = dk ? '#9a9590' : '#6b6560';
+  const AVC  = ['#e85d2f','#2d6be4','#2da868','#7c3aed'];
+
+  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+
+  // Header
+  ctx.fillStyle = '#e85d2f'; ctx.fillRect(0, 0, W, 64);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('SplitEase', W/2, 42);
+
+  // Bill card
+  let cy = 76;
+  roundRect(ctx, 20, cy, W-40, billCardH, 16, CARD);
+  cy += 10;
+  ctx.fillStyle = SUB; ctx.font = '12px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('TOTAL BILL', 44, cy+20);
+  ctx.fillStyle = '#e85d2f'; ctx.font = 'bold 42px sans-serif';
+  ctx.fillText(fmt(r.total), 44, cy+62);
+  cy += 70;
+  ctx.strokeStyle = LINE; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(44, cy); ctx.lineTo(W-44, cy); ctx.stroke();
+  cy += 14;
+
+  const cols = [{l:'Bill',v:fmt(r.bill)},{l:'Tip',v:r.tip>0?fmt(r.tip):'—'},{l:'GST',v:r.gst>0?fmt(r.gst):'—'},{l:'Each',v:r.perPerson?fmt(r.perPerson):'Custom'}];
+  const colW = (W-88)/4;
+  cols.forEach((c,i) => {
+    const x = 44 + i*colW;
+    ctx.fillStyle = SUB; ctx.font = '11px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(c.l, x, cy);
+    ctx.fillStyle = TEXT; ctx.font = 'bold 13px sans-serif'; ctx.fillText(c.v, x, cy+18);
+  });
+  cy += 36;
+  ctx.fillStyle = SUB; ctx.font = '11px sans-serif'; ctx.fillText('PER PERSON', 44, cy); cy += 10;
+
+  r.persons.slice(0, 6).forEach((p, i) => {
+    roundRect(ctx, 44, cy, W-88, 36, 8, ROWBG);
+    ctx.fillStyle = AVC[i%4]; ctx.shadowColor = 'transparent';
+    ctx.beginPath(); ctx.arc(68, cy+18, 13, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(initials(p.name), 68, cy+23);
+    ctx.fillStyle = TEXT; ctx.font = '500 13px sans-serif'; ctx.textAlign = 'left';
+    let name = p.name||'';
+    while (name.length>1 && ctx.measureText(name).width>280) name = name.slice(0,-1);
+    ctx.fillText(name, 90, cy+22);
+    ctx.fillStyle = '#2da868'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(fmt(p.amount), W-52, cy+22);
+    cy += personRowH;
+  });
+  if (r.persons.length>6) {
+    ctx.fillStyle = SUB; ctx.font = '11px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(`+ ${r.persons.length-6} more people…`, 44, cy+8);
+  }
+
+  // QR card
+  const qrY = 76 + billCardH + 14;
+  roundRect(ctx, 20, qrY, W-40, qrCardH, 16, '#0a1628');
+  ctx.fillStyle = 'rgba(255,255,255,.42)'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('SCAN TO PAY', W/2, qrY+28);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 22px sans-serif'; ctx.fillText(state.bank.name||'', W/2, qrY+58);
+  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.font = '13px monospace'; ctx.fillText(state.bank.upi||'', W/2, qrY+80);
+
+  const qrSize = 200, qrBoxX = W/2-qrSize/2-10, qrBoxY = qrY+90;
+  roundRect(ctx, qrBoxX, qrBoxY, qrSize+20, qrSize+20, 12, '#fff');
+  if (qrDataUrl) {
+    const qrImg = new Image();
+    await new Promise(res => { qrImg.onload = res; qrImg.onerror = res; qrImg.src = qrDataUrl; });
+    ctx.drawImage(qrImg, qrBoxX+10, qrBoxY+10, qrSize, qrSize);
+  }
+  ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('GPay  ·  PhonePe  ·  Paytm  ·  BHIM', W/2, qrY+qrCardH-16);
+
+  // Footer
+  ctx.fillStyle = SUB; ctx.font = '11px sans-serif';
+  ctx.fillText('Generated by SplitEase', W/2, H-8);
+  return canvas.toDataURL('image/png');
+}
+
+function downloadImage(dataUrl, filename) {
+  const a = document.createElement('a');
+  a.href = dataUrl; a.download = filename; a.click();
+}
+
+/* ══════════════════════
+   BANK / UPI
+══════════════════════ */
+function loadBankForm() {
+  if (!state.bank) return;
+  $('bankName').value = state.bank.name || '';
+  $('bankUPI').value  = state.bank.upi  || '';
+  if (state.bank.upi) renderUPIPreview();
+}
+
+function renderUPIPreview() {
+  if (!state.bank?.upi) { $('bankPreview').style.display = 'none'; return; }
+  $('bankPreview').style.display = 'block';
+  $('bc-name').textContent = state.bank.name || '—';
+  $('bc-upi').textContent  = state.bank.upi;
+  const upiStr = `upi://pay?pa=${state.bank.upi.trim()}&pn=${(state.bank.name||'').trim()}&cu=INR`;
+  $('qrUpiString').textContent = upiStr;
+  const qrEl = $('qrCode'); qrEl.innerHTML = '';
+  try {
+    new QRCode(qrEl, {text:upiStr, width:200, height:200, colorDark:'#000000', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.L});
+  } catch { qrEl.innerHTML = '<p style="color:red;font-size:.8rem">QR generation failed. Check UPI ID.</p>'; }
+}
+
+$('saveBankBtn').onclick = () => {
+  const upi  = $('bankUPI').value.trim();
+  const name = $('bankName').value.trim();
+  if (!upi) { showToast('Please enter your UPI ID.'); return; }
+  if (!upi.includes('@')) { showToast('UPI ID must contain @ e.g. name@upi'); return; }
+  state.bank = {name, upi};
+  LS.set('se_bank', state.bank);
+  renderUPIPreview();
+  showToast('QR Code generated ✅');
+};
+
+$('copyUpiBtn').onclick = () =>
+  navigator.clipboard.writeText(state.bank?.upi || '').then(() => showToast('UPI ID copied!')).catch(() => showToast('Could not copy.'));
+
+$('shareBankBtn').onclick = async () => {
+  const b = state.bank;
+  if (!b?.upi) { showToast('Generate QR first.'); return; }
+  const qrDataUrl = await generateQRDataUrl(b.upi, b.name||'');
+  const dataUrl   = await drawBankQRImage(b, qrDataUrl);
+  const waText    = `💳 *Pay me via UPI*\n\nName: ${b.name}\nUPI ID: *${b.upi}*\n\n_(Scan the QR image I sent you)_`;
+  await shareOrDownload(dataUrl, 'splitease-upi.png', 'Pay via UPI', waText);
+};
+
+async function drawBankQRImage(b, qrDataUrl) {
+  const W=480, H=360, canvas=$('shareCanvas');
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#0a1628'; ctx.fillRect(0,0,W,H);
+  roundRect(ctx,0,0,W,64,0,'rgba(255,255,255,.04)');
+  ctx.fillStyle='rgba(255,255,255,.45)'; ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.fillText('PAY VIA UPI', W/2, 28);
+  ctx.fillStyle='#fff'; ctx.font='bold 22px sans-serif'; ctx.fillText(b.name||'', W/2, 54);
+  ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='14px monospace'; ctx.fillText(b.upi, W/2, 78);
+  roundRect(ctx, W/2-100, 92, 200, 200, 12, '#fff');
+  if (qrDataUrl) {
+    const qrImg=new Image();
+    await new Promise(res=>{qrImg.onload=res;qrImg.onerror=res;qrImg.src=qrDataUrl;});
+    ctx.drawImage(qrImg, W/2-88, 104, 176, 176);
+  }
+  ctx.fillStyle='rgba(255,255,255,.35)'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('GPay · PhonePe · Paytm · BHIM', W/2, 310);
+  ctx.fillStyle='rgba(255,255,255,.2)'; ctx.font='10px sans-serif';
+  ctx.fillText('Generated by SplitEase', W/2, 342);
+  return canvas.toDataURL('image/png');
+}
+
+/* ══════════════════════
+   QR SCANNER
+══════════════════════ */
+let scanStream=null, scanAnimFrame=null, jsQRLoaded=false;
+$('startScanBtn').onclick = startScanner;
+$('stopScanBtn').onclick  = stopScanner;
+
+async function startScanner() {
+  $('scannerArea').style.display='none'; $('scannerVideo').style.display='block'; $('scanResult').style.display='none';
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720}}});
+    const video=$('camVideo'); video.srcObject=scanStream; await video.play();
+    if ('BarcodeDetector' in window) {
+      scanWithBarcodeDetector(video);
+    } else {
+      await loadJsQR();
+      scanWithJsQR(video);
+    }
+  } catch(e) {
+    showToast(e.name==='NotAllowedError' ? 'Camera permission denied.' : 'Camera not available on this device/browser.');
+    stopScanner();
+  }
+}
+
+function scanWithBarcodeDetector(video) {
+  const detector=new BarcodeDetector({formats:['qr_code']});
+  const tick=async()=>{
+    if (!scanStream) return;
+    try { const codes=await detector.detect(video); if (codes.length) { handleScanResult(codes[0].rawValue); return; } } catch {}
+    scanAnimFrame=requestAnimationFrame(tick);
+  };
+  scanAnimFrame=requestAnimationFrame(tick);
+}
+
+async function loadJsQR() {
+  if (jsQRLoaded) return;
+  await new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js';
+    s.onload=()=>{jsQRLoaded=true;res();}; s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+
+function scanWithJsQR(video) {
+  const canvas=document.createElement('canvas'), ctx=canvas.getContext('2d');
+  const tick=()=>{
+    if (!scanStream) return;
+    if (video.readyState===video.HAVE_ENOUGH_DATA) {
+      canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+      ctx.drawImage(video,0,0,canvas.width,canvas.height);
+      const d=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const code=window.jsQR(d.data,d.width,d.height,{inversionAttempts:'dontInvert'});
+      if (code) { handleScanResult(code.data); return; }
+    }
+    scanAnimFrame=requestAnimationFrame(tick);
+  };
+  scanAnimFrame=requestAnimationFrame(tick);
+}
+
+function handleScanResult(text) {
+  stopScanner();
+  text=(text||'').trim();
+  const paMatch=text.match(/[?&]pa=([^&]+)/i);
+  const upiId=paMatch ? decodeURIComponent(paMatch[1]) : (text.includes('@') ? text : text);
+  $('scannedUPI').textContent=upiId;
+  $('scanResult').style.display='block';
+  $('copyScannedBtn').onclick=()=>navigator.clipboard.writeText(upiId).then(()=>showToast('UPI ID copied!')).catch(()=>{});
+  $('payScannedBtn').onclick=()=>{ window.location.href=`upi://pay?pa=${upiId}&cu=INR`; };
+}
+
+function stopScanner() {
+  if (scanAnimFrame) { cancelAnimationFrame(scanAnimFrame); scanAnimFrame=null; }
+  if (scanStream) { scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
+  const v=$('camVideo'); if (v) v.srcObject=null;
+  $('scannerVideo').style.display='none'; $('scannerArea').style.display='block';
+}
+
+/* ══════════════════════
+   HISTORY
+══════════════════════ */
+function saveHist(r) {
+  state.hist.unshift(r);
+  if (state.hist.length>50) state.hist.length=50;
+  LS.set('se_hist', state.hist);
+}
+
+function renderHist() {
+  const el=$('histList');
+  if (!state.hist.length) {
+    el.innerHTML='<div class="hist-empty"><div class="hist-empty-icon">📭</div><div>No history yet.</div><div style="font-size:.75rem;margin-top:3px">Calculations will appear here.</div></div>';
+    return;
+  }
+  const frag=document.createDocumentFragment();
+  state.hist.forEach((r,idx)=>{
+    const d=new Date(r.timestamp);
+    const ds=d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const catBadges = r.cats?.length
+      ? '<div class="hist-cats">' + r.cats.slice(0,4).map(c=>`<span class="hist-badge">${c.i} ${c.n}</span>`).join('') + (r.cats.length>4?`<span class="hist-badge">+${r.cats.length-4}</span>`:'')+  '</div>' : '';
+    const ppl='<div class="hist-people">' + r.persons.slice(0,5).map(p=>`<div class="h-av">${initials(p.name)}</div>`).join('') + (r.persons.length>5?`<span class="hist-more">+${r.persons.length-5}</span>`:'')+  '</div>';
+    const div=document.createElement('div');
+    div.className='hist-item';
+    div.innerHTML=`
+      <div class="hist-top"><span class="hist-total">${fmt(r.total)}</span><span class="hist-date">${ds}</span></div>
+      ${catBadges}
+      <div class="hist-sub">${r.numPeople} ${r.numPeople===1?'person':'people'} · ${r.perPerson?fmt(r.perPerson)+' each':'custom split'}</div>
+      ${ppl}
+      <div class="hist-acts">
+        <button class="h-act-btn" data-del="${idx}">🗑 Delete</button>
+        <button class="h-act-btn" style="color:var(--acc);border-color:var(--acc-lt)" data-load="${idx}">↩ Load</button>
+      </div>`;
+    frag.appendChild(div);
+  });
+  el.innerHTML='';
+  el.appendChild(frag);
+  // Delegate events (single listener instead of N×2 listeners)
+  el.onclick=e=>{
+    const del=e.target.closest('[data-del]'); if (del) { delHist(+del.dataset.del); return; }
+    const load=e.target.closest('[data-load]'); if (load) loadHistItem(+load.dataset.load);
+  };
+}
+
+function delHist(idx) {
+  state.hist.splice(idx,1); LS.set('se_hist',state.hist); renderHist(); showToast('Deleted.');
+}
+
+function loadHistItem(idx) {
+  const r=state.hist[idx];
+  switchPage('split');
+  $('billAmount').value=r.bill;
+  state.persons=r.persons.map(p=>({name:p.name,amt:p.amount}));
+  state.cats=r.cats?r.cats.map(c=>({...c})):[];
+  renderPersonRows(); renderCats(); renderResult(r);
+  showToast('Loaded!');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+$('clearHistBtn').onclick=()=>{
+  if (!confirm('Clear all history?')) return;
+  state.hist=[]; LS.del('se_hist'); renderHist();
+};
+
+/* ══════════════════════
+   INIT
+══════════════════════ */
+renderPersonRows();
+renderCats();
+loadBankForm();
+
+// Service Worker
+if ('serviceWorker' in navigator) {
+  const skip = /claudeusercontent\.com|^localhost$|^127\.0\.0\.1$/.test(location.hostname) || location.protocol === 'file:';
+  if (!skip) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
